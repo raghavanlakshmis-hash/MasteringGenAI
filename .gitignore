@@ -1,0 +1,17 @@
+﻿# Environment — never commit secrets
+.env
+.env.local
+
+# Data files (contain personal fitness data)
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+.streamlit/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

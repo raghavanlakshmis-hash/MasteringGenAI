@@ -55,10 +55,12 @@ def inject_css():
                                    padding-right: 2rem !important;
                                    max-width: 100% !important; }
     [data-testid="stHeader"]     { background: transparent !important; }
-    #MainMenu, footer            { visibility: hidden; }
-    .stDeployButton              { display: none !important; }
-    [data-testid="stSidebar"]    { display: none !important; }
-    [data-testid="collapsedControl"] { display: none !important; }
+    #MainMenu, footer                            { visibility: hidden !important; }
+    .stDeployButton                              { display: none !important; }
+    [data-testid="stAppDeployButton"]            { display: none !important; }
+    [data-testid="stToolbarActionButtonLabel"]   { display: none !important; }
+    [data-testid="stSidebar"]                    { display: none !important; }
+    [data-testid="collapsedControl"]             { display: none !important; }
 
     .card {
         background: white;
@@ -569,10 +571,10 @@ def show_onboarding():
         name = st.text_input("Your name", placeholder="First name")
         st.markdown("---")
         st.markdown("**🎯 Your Daily Goals**")
-        gw = st.slider("Goal weight (lbs)", 100, 300, 150)
-        mg = st.slider("Daily Move goal (cal)",      200, 1500, 600,  50)
-        eg = st.slider("Daily Exercise goal (min)",   10,  180,  60,   5)
-        sg = st.slider("Daily Stand goal (hrs)",       4,   16,  12)
+        gw = st.slider("Goal weight (lbs)", 0, 300, 0)
+        mg = st.slider("Daily Move goal (cal)",       0, 1500, 0,  50)
+        eg = st.slider("Daily Exercise goal (min)",   0,  180, 0,   5)
+        sg = st.slider("Daily Stand goal (hrs)",      0,   16, 0)
         ok = st.form_submit_button("🚀 Start Tracking!")
         if ok:
             if not name.strip():
@@ -591,21 +593,25 @@ def tab_log(df, goals):
     st.markdown("### 📊 Log Your Activity")
     col1, col2 = st.columns([1.1, 0.9])
 
+    # Version key forces slider re-init to defaults after reset
+    fv = st.session_state.get("form_v", 0)
+
     with col1:
         st.markdown("**✏️ Enter Today's Data**")
         last_wt = float(df["weight"].iloc[-1]) if not df.empty else 150.0
-        with st.form("manual"):
+        with st.form(f"manual_{fv}"):
             d   = st.date_input("Date", value=date.today())
-            wt  = st.slider("⚖️ Weight (lbs)",   100.0, 350.0, last_wt,              0.5)
-            mv  = st.slider("🔥 Move (cal)",      0,     1500,  goals["moveGoal"]//2,  10)
-            ex  = st.slider("⚡ Exercise (min)",  0,     180,   goals["exerciseGoal"]//2, 5)
-            st_ = st.slider("🧍 Stand (hrs)",     0,     18,    int(goals["standGoal"] // 2), 1)
-            sl  = st.slider("😴 Sleep (hrs)",     0,     12,    7,                    1)
+            wt  = st.slider("⚖️ Weight (lbs)",  100.0, 350.0, last_wt, 0.5)
+            mv  = st.slider("🔥 Move (cal)",     0,     1500,  0,        10)
+            ex  = st.slider("⚡ Exercise (min)", 0,     180,   0,        5)
+            st_ = st.slider("🧍 Stand (hrs)",    0,     18,    0,        1)
+            sl  = st.slider("😴 Sleep (hrs)",    0,     12,    0,        1)
             if st.form_submit_button("💾 Save Today's Data", use_container_width=True):
                 new_df = upsert_entry(df, {"date": d.isoformat(), "weight": wt,
                                            "move": mv, "exercise": ex, "stand": st_, "sleep": sl})
                 save_data(new_df)
                 st.session_state["df"] = new_df
+                st.session_state["form_v"] = fv + 1  # bump so sliders reset next render
                 st.success("✅ Saved!")
                 st.rerun()
 
@@ -625,13 +631,23 @@ def tab_log(df, goals):
                            "Move":"move","Exercise":"exercise","Stand":"stand",
                            "Sleep hours":"sleep","Sleep":"sleep"}
                 new = new.rename(columns={k:v for k,v in renames.items() if k in new.columns})
-                new["date"] = pd.to_datetime(new["date"])
-                merged = pd.concat([df, new]).drop_duplicates("date", keep="last")
-                merged = merged.sort_values("date").reset_index(drop=True)
-                save_data(merged)
-                st.session_state["df"] = merged
-                st.success(f"✅ Imported {len(new)} entries!")
-                st.rerun()
+                raw_dates = new["date"].astype(str)
+                new["date"] = pd.to_datetime(raw_dates, format="%m/%d/%Y", errors="coerce")
+                still_nat = new["date"].isna()
+                if still_nat.any():
+                    new.loc[still_nat, "date"] = pd.to_datetime(
+                        raw_dates[still_nat], errors="coerce"
+                    )
+                new = new.dropna(subset=["date"])
+                if new.empty:
+                    st.error("❌ No valid dates found — Date column must be M/D/YYYY or YYYY-MM-DD")
+                else:
+                    merged = pd.concat([df, new]).drop_duplicates("date", keep="last")
+                    merged = merged.sort_values("date").reset_index(drop=True)
+                    save_data(merged)
+                    st.session_state["df"] = merged
+                    st.session_state["form_v"] = st.session_state.get("form_v", 0) + 1
+                    st.success(f"✅ Imported {len(new)} entries!")
             except Exception as e:
                 st.error(f"❌ {e}")
 
@@ -648,6 +664,7 @@ def tab_log(df, goals):
 # Tab 2 – Dashboard
 # ─────────────────────────────────────────────────────────────────────────────
 def tab_dashboard(df, goals):
+    df = st.session_state.get("df", df)
     p = st.tabs(["🏠 Home","⚖️ Weight","⚡ Activity","🎯 Goals","💡 Insights"])
     with p[0]: dash_home(df, goals)
     with p[1]: dash_weight(df, goals)
@@ -843,6 +860,7 @@ def dash_insights(df, goals):
 # Tab 3 – 30-Day Summary
 # ─────────────────────────────────────────────────────────────────────────────
 def tab_summary(df, goals):
+    df = st.session_state.get("df", df)
     st.markdown("### 📈 30-Day Summary")
     last30 = df.tail(30)
 
@@ -857,17 +875,34 @@ def tab_summary(df, goals):
     sw, ew    = last30["weight"].iloc[0], last30["weight"].iloc[-1]
     wchg      = round(ew - sw, 1)
 
-    days_hit = sum(1 for _, r in last30.iterrows() if r["exercise"] >= goals["exerciseGoal"])
-    pct_hit  = days_hit / len(last30)
+    days_logged = len(last30)
+    days_hit    = sum(1 for _, r in last30.iterrows() if r["exercise"] >= goals["exerciseGoal"])
+    pct_hit     = days_hit / days_logged
     badge_t  = "Strong Month! 🏆" if pct_hit >= 0.8 else ("Keep Going! 💪" if pct_hit >= 0.5 else "Room to Grow 🌱")
     badge_c  = "badge-green"      if pct_hit >= 0.8 else ("badge-blue"      if pct_hit >= 0.5 else "badge-gray")
 
+    # Period label — singular when only 1 day
+    if days_logged == 1:
+        period_str = last30['date'].iloc[0].strftime('%b %d, %Y')
+    else:
+        period_str = f"{last30['date'].iloc[0].strftime('%b %d')} → {last30['date'].iloc[-1].strftime('%b %d, %Y')}"
+
     st.markdown(f"""<div class="card" style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-            <p class="metric-label">30-Day Period</p>
-            <p style="color:#64748B;font-size:13px;margin:0">
-                {last30['date'].iloc[0].strftime('%b %d')} → {last30['date'].iloc[-1].strftime('%b %d, %Y')}
-            </p>
+        <div style="display:flex;gap:32px;align-items:center">
+            <div>
+                <p class="metric-label">Days Logged</p>
+                <p style="color:#1E293B;font-size:1.5rem;font-weight:700;margin:0">{days_logged}</p>
+            </div>
+            <div>
+                <p class="metric-label">Workout Days</p>
+                <p style="color:#4F75FF;font-size:1.5rem;font-weight:700;margin:0">{days_hit}
+                    <span style="font-size:0.8rem;font-weight:400;color:#94A3B8"> / {days_logged}</span>
+                </p>
+            </div>
+            <div>
+                <p class="metric-label">Period</p>
+                <p style="color:#64748B;font-size:12px;margin:0">{period_str}</p>
+            </div>
         </div>
         <span class="badge {badge_c}">{badge_t}</span>
     </div>""", unsafe_allow_html=True)
@@ -920,6 +955,7 @@ def tab_summary(df, goals):
 # Tab 4 – AI Chat
 # ─────────────────────────────────────────────────────────────────────────────
 def tab_chat(df, goals):
+    df = st.session_state.get("df", df)
     if "chat" not in st.session_state:
         st.session_state.chat = []
 
@@ -994,23 +1030,28 @@ def _send(prompt: str, df, goals):
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 def reset_profile():
-    """Clear goals + session state so onboarding runs again."""
+    """Clear goals, fitness data, and ALL session state so onboarding runs fresh."""
     if GOALS_FILE.exists():
         GOALS_FILE.unlink()
-    # Explicitly set to None rather than pop so the None-check in main() fires
-    st.session_state["goals"] = None
-    for key in ["df", "chat", "insights", "recs"]:
-        st.session_state.pop(key, None)
+    if DATA_FILE.exists():
+        DATA_FILE.unlink()
+    # Wipe everything and bump form version so sliders reset to defaults
+    st.session_state.clear()
+    st.session_state["goals"]  = None
+    st.session_state["df"]     = pd.DataFrame(columns=["date","weight","move","exercise","stand","sleep"])
+    st.session_state["form_v"] = 0
     st.rerun()
 
 
 def main():
     inject_css()
 
-    # Load from disk only on first visit; reset_profile() sets goals to None explicitly
     if "goals" not in st.session_state:
         st.session_state["goals"] = load_goals()
-    if "df" not in st.session_state:
+    # Load (or reload) df from disk whenever session state has no data but the
+    # file does — this fixes the post-reset / post-onboarding stale-empty-df bug.
+    if "df" not in st.session_state or \
+            (st.session_state["df"].empty and DATA_FILE.exists()):
         st.session_state["df"] = load_data()
 
     goals = st.session_state["goals"]
@@ -1039,6 +1080,9 @@ def main():
 
     t1, t2, t3, t4 = st.tabs(["📊 Log Data", "🏠 Dashboard", "📈 Summary", "🤖 AI Chat"])
     with t1: tab_log(df, goals)
+    # Re-read after tab_log: CSV upload / manual save update session_state["df"]
+    # but df was captured before tab_log ran, so other tabs would see stale data.
+    df = st.session_state["df"]
     with t2: tab_dashboard(df, goals)
     with t3: tab_summary(df, goals)
     with t4: tab_chat(df, goals)

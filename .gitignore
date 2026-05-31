@@ -1,0 +1,22 @@
+﻿# Secrets — never commit
+**/.env
+**/.env.local
+.env
+
+# Node
+**/node_modules/
+**/dist/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/.streamlit/
+
+# Data (personal fitness data)
+**/data/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -655,7 +655,7 @@ def tab_log(df, goals):
         st.markdown("---")
         st.markdown("**📋 Recent Entries**")
         show = st.session_state["df"].tail(7).copy()
-        show["date"] = show["date"].dt.strftime("%b %d, %Y")
+        show["date"] = pd.to_datetime(show["date"]).dt.strftime("%b %d, %Y")
         show.columns = ["Date","Weight (lbs)","Move (cal)","Exercise (min)","Stand (hrs)","Sleep (hrs)"]
         st.dataframe(show.iloc[::-1], hide_index=True, use_container_width=True)
 
@@ -738,7 +738,7 @@ def dash_weight(df, goals):
     st.plotly_chart(weight_chart(df, goals["goalWeight"], days),
                     use_container_width=True, config={"displayModeBar": False})
     hist = df.tail(7)[["date","weight"]].copy()
-    hist["date"] = hist["date"].dt.strftime("%b %d")
+    hist["date"] = pd.to_datetime(hist["date"]).dt.strftime("%b %d")
     hist["Δ"] = df.tail(7)["weight"].diff().map(lambda x: f"{x:+.1f}" if pd.notna(x) else "—")
     hist.columns = ["Date","Weight","Δ"]
     st.dataframe(hist.iloc[::-1], hide_index=True, use_container_width=True)

@@ -33,7 +33,7 @@ export function FitnessProvider({ children }: { children: ReactNode }) {
     newEntries.forEach(e => map.set(e.date, e));
     const merged = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
     saveEntries(merged);
-    setEntries(merged);
+    setEntries(getEntries()); // read back from storage so state matches persisted data exactly
   }, []);
 
   const completeOnboarding = useCallback((g: UserGoals) => {

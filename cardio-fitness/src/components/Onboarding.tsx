@@ -8,10 +8,10 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<UserGoals>({
     name: '',
-    goalWeight: 150,
-    moveGoal: 600,
-    exerciseGoal: 60,
-    standGoal: 12,
+    goalWeight: 0,
+    moveGoal: 0,
+    exerciseGoal: 0,
+    standGoal: 0,
   });
 
   const set = (k: keyof UserGoals, v: string | number) =>
@@ -65,35 +65,38 @@ export default function Onboarding() {
                 label="🎯 Goal Weight"
                 unit="lbs"
                 value={form.goalWeight}
-                min={100} max={300} step={1}
+                min={0} max={300} step={1}
                 onChange={v => set('goalWeight', v)}
               />
               <GoalSlider
                 label="🔥 Daily Move Goal"
                 unit="cal"
                 value={form.moveGoal}
-                min={200} max={1200} step={50}
+                min={0} max={1200} step={50}
                 onChange={v => set('moveGoal', v)}
               />
               <GoalSlider
                 label="⚡ Exercise Goal"
                 unit="min/day"
                 value={form.exerciseGoal}
-                min={10} max={120} step={5}
+                min={0} max={120} step={5}
                 onChange={v => set('exerciseGoal', v)}
               />
               <GoalSlider
                 label="🧍 Stand Goal"
                 unit="hrs/day"
                 value={form.standGoal}
-                min={4} max={16} step={1}
+                min={0} max={16} step={1}
                 onChange={v => set('standGoal', v)}
               />
             </div>
 
             <div className="flex gap-3 mt-7">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  setForm(f => ({ name: f.name, goalWeight: 0, moveGoal: 0, exerciseGoal: 0, standGoal: 0 }));
+                  setStep(1);
+                }}
                 className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-3 font-medium text-sm hover:bg-gray-50 transition-colors"
               >
                 ← Back

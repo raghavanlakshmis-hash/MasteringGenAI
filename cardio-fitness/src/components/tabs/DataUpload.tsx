@@ -27,6 +27,7 @@ export default function DataUpload() {
 
   const handleSave = () => {
     addEntry({ date, ...form });
+    setForm(prev => ({ ...DEFAULT_FORM, weight: prev.weight })); // keep last weight, zero out activity
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -39,13 +40,15 @@ export default function DataUpload() {
     }
     try {
       const entries = await parseCSV(file);
-      if (entries.length === 0) throw new Error('No valid rows found');
+      if (entries.length === 0) throw new Error('No valid rows found — check column headers');
       bulkImport(entries);
       setCsvStatus('success');
       setCsvMsg(`Imported ${entries.length} entries successfully!`);
     } catch (e: any) {
       setCsvStatus('error');
       setCsvMsg(e.message || 'Failed to parse CSV');
+    } finally {
+      if (fileRef.current) fileRef.current.value = ''; // allow re-uploading the same file
     }
     setTimeout(() => setCsvStatus('idle'), 4000);
   };

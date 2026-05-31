@@ -3,12 +3,22 @@ import { FitnessEntry } from '../types';
 
 function normalizeDate(raw: string): string {
   if (!raw) return '';
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return '';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const s = raw.trim();
+
+  // M/D/YYYY or MM/DD/YYYY — the format Apple Health / common spreadsheets export
+  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) {
+    const [, m, d, y] = mdy;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
+  // YYYY-MM-DD — already normalised
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+
+  // Fallback for other locale-specific strings
+  const dt = new Date(s);
+  if (isNaN(dt.getTime())) return '';
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
 export function parseCSV(file: File): Promise<FitnessEntry[]> {

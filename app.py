@@ -516,11 +516,25 @@ def sparkline(values, color):
 # ─────────────────────────────────────────────────────────────────────────────
 # Claude API
 # ─────────────────────────────────────────────────────────────────────────────
+def _get_api_key() -> str:
+    key = os.getenv("ANTHROPIC_API_KEY")
+    if key:
+        return key
+    try:
+        key = st.secrets["ANTHROPIC_API_KEY"]
+        if key:
+            return key
+    except Exception:
+        pass
+    available = list(st.secrets.keys()) if hasattr(st, "secrets") else []
+    raise ValueError(
+        f"ANTHROPIC_API_KEY not found. Keys available in st.secrets: {available}. "
+        "In Streamlit Cloud go to App Settings → Secrets and add: ANTHROPIC_API_KEY = \"sk-ant-...\""
+    )
+
+
 def ask_claude(messages: list, system: str) -> str:
-    api_key = os.getenv("ANTHROPIC_API_KEY") or st.secrets.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY is not set. Add it in Streamlit Cloud → App Settings → Secrets.")
-    client = Anthropic(api_key=api_key)
+    client = Anthropic(api_key=_get_api_key())
     r = client.messages.create(
         model="claude-sonnet-4-6", max_tokens=512,
         system=system, messages=messages)

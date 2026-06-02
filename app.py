@@ -201,8 +201,8 @@ def health_score(df: pd.DataFrame, goals: dict) -> int:
         return 0
     r = df.tail(30)
     # Move (30 pts) + Exercise (30 pts) — stand is bonus, capped at 20 pts total for activity
-    move_score = min(r["move"].mean()     / goals["moveGoal"], 1) * 30
-    ex_score   = min(r["exercise"].mean() / goals["exerciseGoal"], 1) * 30
+    move_score = min(r["move"].mean()     / (goals["moveGoal"] or 1), 1) * 30
+    ex_score   = min(r["exercise"].mean() / (goals["exerciseGoal"] or 1), 1) * 30
     # Sleep: 20 pts, best when 7-9 hrs
     slp_score  = max(0, 1 - abs(r["sleep"].mean() - 8) / 4) * 20
     # Weight trend: 20 pts — reward moving toward goal, penalise moving away
@@ -447,9 +447,9 @@ def activity_rings_html(move, move_goal, ex, ex_goal, stand, stand_goal, size=17
     c = size // 2
     return (
         f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
-        + ring(c, c, int(c * 0.72), move / move_goal,   "#EF4444")
-        + ring(c, c, int(c * 0.52), ex   / ex_goal,     "#22C55E")
-        + ring(c, c, int(c * 0.33), stand / stand_goal, "#3B82F6")
+        + ring(c, c, int(c * 0.72), move / (move_goal or 1),   "#EF4444")
+        + ring(c, c, int(c * 0.52), ex   / (ex_goal or 1),     "#22C55E")
+        + ring(c, c, int(c * 0.33), stand / (stand_goal or 1), "#3B82F6")
         + f'</svg>'
         + f'<div style="display:flex;gap:14px;justify-content:center;font-size:11px;font-family:Inter;margin-top:6px">'
         + f'<span><span style="color:#EF4444">●</span> Move {int(move)}/{move_goal} cal</span>'
@@ -768,7 +768,7 @@ def dash_activity(df, goals):
                             ("exercise","exerciseGoal","⚡ Exercise"),
                             ("stand","standGoal","🧍 Stand")]:
         avg = last7[col].mean()
-        pct = min(avg / goals[gk], 1.0)
+        pct = min(avg / (goals[gk] or 1), 1.0)
         st.markdown(f"**{label}** — {avg:.0f} / {goals[gk]}")
         st.progress(pct)
 

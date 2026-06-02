@@ -961,6 +961,8 @@ def tab_chat(df, goals):
     df = st.session_state.get("df", df)
     if "chat" not in st.session_state:
         st.session_state.chat = []
+    if "chat_error" in st.session_state:
+        st.error(f"❌ Cardio couldn't respond: {st.session_state.pop('chat_error')}")
 
     mood = calc_mood(df, goals)
     mood_emoji = {"great": "🔥", "okay": "💪", "notgreat": "💙"}.get(mood, "💪")
@@ -1024,9 +1026,8 @@ def _send(prompt: str, df, goals):
             )
         st.session_state.chat.append({"role": "assistant", "content": reply})
     except Exception as e:
-        # Roll back the user message so the UI stays clean
         st.session_state.chat.pop()
-        st.error(f"❌ Cardio couldn't respond: {e}")
+        st.session_state["chat_error"] = str(e)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

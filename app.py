@@ -693,15 +693,12 @@ def tab_dashboard(df, goals):
 def dash_home(df, goals):
     mood = calc_mood(df, goals)
     latest = df.iloc[-1] if not df.empty else None
-    hour = datetime.now().hour
-    greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 17 else "Good evening")
     first = goals["name"].split()[0]
 
     c1, c2 = st.columns([1.1, 0.9])
     with c1:
         st.markdown(f"""<div class="card-blue">
-            <p style="opacity:.8;font-size:13px;margin:0">{greeting},</p>
-            <h2 style="margin:4px 0;font-size:1.8rem">{first}! 👋</h2>
+            <h2 style="margin:4px 0;font-size:1.8rem">Hi {first}! 👋</h2>
             <p style="opacity:.85;font-size:12px;margin-top:8px;line-height:1.5">
                 {mood_message(mood, goals['name'])}</p>
         </div>""", unsafe_allow_html=True)

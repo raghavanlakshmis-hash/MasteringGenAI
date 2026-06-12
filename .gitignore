@@ -1,22 +1,8 @@
-﻿# Secrets — never commit
-**/.env
-**/.env.local
+**/.streamlit/secrets.toml
+__pycache__/
+*.pyc
 .env
-
-# Node
-**/node_modules/
-**/dist/
-
-# Python cache
-**/__pycache__/
-**/*.pyc
-**/.streamlit/
-
-# Data (personal fitness data)
-**/data/
-
-# OS / Editor
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+.venv/
+*.tmp
+~$*
+**/API Keys.docx

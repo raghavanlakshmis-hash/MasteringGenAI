@@ -156,6 +156,17 @@ EXAMPLES = {
         "grandfather. MRI shows cerebellar atrophy. No metabolic "
         "abnormalities on routine labs."
     ),
+    "Pediatric neuromuscular": (
+        "A 4-year-old boy is referred for evaluation of difficulty climbing "
+        "stairs and frequent falls. His parents report that he was late to "
+        "walk (18 months) and seems clumsier than his peers. On examination, "
+        "he uses his hands to push himself up from the floor by climbing up "
+        "his thighs. He has pseudohypertrophy of the calves bilaterally and "
+        "a waddling gait. Deep tendon reflexes are diminished. Laboratory "
+        "studies show a serum creatine kinase of 18,500 U/L (normal <200). "
+        "His maternal uncle died at age 22 of a similar progressive weakness; "
+        "his mother has no symptoms."
+    ),
     "Common (negative control)": (
         "58-year-old man with worsening exertional shortness of breath over "
         "3 months, productive cough, 10-pack-year smoking history. Wheezing "
@@ -176,16 +187,14 @@ with st.sidebar:
     st.markdown(
         """
         <div>
+            <div class="sidebar-stat">4–5 yrs</div>
+            <div class="sidebar-stat-label">average time to diagnosis — often up to 20+ years in primary immunodeficiency</div>
             <div class="sidebar-stat">7,000+</div>
             <div class="sidebar-stat-label">known rare diseases — most with no approved treatment</div>
-            <div class="sidebar-stat">5–7 yrs</div>
-            <div class="sidebar-stat-label">average time a patient spends undiagnosed before a correct answer</div>
-            <div class="sidebar-stat">6 doctors</div>
-            <div class="sidebar-stat-label">typically consulted before the right diagnosis is made</div>
-            <div class="sidebar-stat">350M</div>
-            <div class="sidebar-stat-label">people living with a rare disease globally — 1 in 10 in the US</div>
-            <div class="sidebar-stat">&lt; 30 sec</div>
-            <div class="sidebar-stat-label">to a cited differential — so the right doctor is the first one</div>
+            <div class="sidebar-stat">300M+</div>
+            <div class="sidebar-stat-label">people affected globally</div>
+            <div class="sidebar-stat">1 GP + 3</div>
+            <div class="sidebar-stat-label">specialists consulted before diagnosis (median)</div>
         </div>
         """,
         unsafe_allow_html=True,

@@ -301,14 +301,14 @@ if submit:
         st.stop()
 
     with st.spinner(
-        "Extracting phenotypes → searching corpus → reranking → "
-        "synthesizing differential..."
+        "Running pipeline: phenotype extraction → hybrid retrieval → "
+        "reranking → synthesis. This takes 20–60 seconds..."
     ):
         try:
             resp = requests.post(
                 webhook_url,
                 json={"patient_description": case_text},
-                timeout=90,
+                timeout=180,
             )
             resp.raise_for_status()
             data = resp.json()

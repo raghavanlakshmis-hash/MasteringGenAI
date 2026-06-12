@@ -252,9 +252,9 @@ st.markdown(
 st.markdown(
     """
     <div class="disclaimer-box">
-        <p>⚠️ <strong style="font-size:15px; color:#dc2626; text-decoration:underline;">Disclaimer:</strong>
-        This is <strong>decision support, not diagnosis.</strong>
-        All recommendations require clinician judgment.</p>
+        <p>⚠️ <strong style="font-size:15px; color:#dc2626; text-decoration:underline;">For use by qualified healthcare professionals only.</strong>
+        This tool surfaces evidence-based rare disease differentials as a clinical decision support aid — it does not constitute medical advice, diagnosis, or treatment.
+        No output should be acted upon without independent professional assessment of the patient.</p>
     </div>
     """,
     unsafe_allow_html=True,

@@ -119,17 +119,27 @@ st.markdown(
         font-weight: 500;
     }
     .disclaimer-box {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #d97706;
         border-radius: 6px;
-        padding: 12px 14px;
-        margin-top: 8px;
+        padding: 14px 18px;
+        margin-top: 12px;
+        margin-bottom: 4px;
     }
-    .disclaimer-box p {
-        color: #1e40af;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.5;
+    .disclaimer-title {
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 5px;
+    }
+    .disclaimer-body {
+        color: #78350f;
+        font-size: 13.5px;
+        font-weight: 400;
+        line-height: 1.65;
         margin: 0;
     }
     </style>
@@ -252,9 +262,11 @@ st.markdown(
 st.markdown(
     """
     <div class="disclaimer-box">
-        <p>⚠️ <strong style="font-size:15px; color:#dc2626; text-decoration:underline;">For use by qualified healthcare professionals only.</strong>
-        This tool surfaces evidence-based rare disease differentials as a clinical decision support aid — it does not constitute medical advice, diagnosis, or treatment.
-        No output should be acted upon without independent professional assessment of the patient.</p>
+        <div class="disclaimer-title">⚠&nbsp; Clinical Decision Support Only</div>
+        <p class="disclaimer-body">For use by qualified healthcare professionals only. This tool surfaces
+        evidence-based rare disease differentials as a clinical decision support aid — it does not constitute
+        medical advice, diagnosis, or treatment. No output should be acted upon without independent
+        professional assessment of the patient.</p>
     </div>
     """,
     unsafe_allow_html=True,

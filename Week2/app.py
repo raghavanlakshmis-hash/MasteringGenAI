@@ -313,13 +313,27 @@ if submit:
             resp.raise_for_status()
             data = resp.json()
         except requests.exceptions.Timeout:
-            st.error("Request timed out. The n8n workflow took too long.")
+            st.error(
+                "⏱ Request timed out after 180 seconds. "
+                "Check that the n8n workflow completed in the execution log."
+            )
+            st.stop()
+        except requests.exceptions.ConnectionError as e:
+            st.error(f"🔌 Could not connect to the n8n webhook: `{e}`")
+            st.stop()
+        except requests.exceptions.HTTPError as e:
+            st.error(
+                f"❌ n8n returned an error: HTTP {resp.status_code} — `{resp.text[:300]}`"
+            )
             st.stop()
         except requests.exceptions.RequestException as e:
-            st.error(f"Request failed: {e}")
+            st.error(f"❌ Request failed ({type(e).__name__}): `{e}`")
             st.stop()
         except ValueError:
-            st.error("Backend did not return valid JSON.")
+            st.error(
+                f"⚠️ Backend did not return valid JSON. "
+                f"Raw response (first 300 chars): `{resp.text[:300]}`"
+            )
             st.stop()
 
     # ----- Phenotypes -----

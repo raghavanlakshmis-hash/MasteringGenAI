@@ -254,21 +254,16 @@ st.markdown(
 # ============================================================
 # Input area
 # ============================================================
-# Initialize session state
-if "case_text" not in st.session_state:
-    st.session_state.case_text = ""
-
-# Example picker — sets text via session state
+# Example picker — writes directly into the widget key so the text area updates
 st.markdown("**Try an example case:**")
 ex_cols = st.columns(len(EXAMPLES))
 for col, (label, text) in zip(ex_cols, EXAMPLES.items()):
     with col:
         if st.button(label, use_container_width=True):
-            st.session_state.case_text = text
+            st.session_state["case_input"] = text
 
 case_text = st.text_area(
     "Patient case description",
-    value=st.session_state.case_text,
     height=180,
     placeholder=(
         "Describe the patient: age, sex, presenting symptoms, family "

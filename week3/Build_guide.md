@@ -2688,7 +2688,7 @@ git push origin main
 
 **Pinecone check-in store fails with [400]** → The `responses` dict in your check-in record is a nested object. Pinecone metadata only accepts str/number/bool/list-of-str. Replace `**check_in` in the metadata with explicit flat fields — serialize `responses` and `flags` as JSON strings (`responses_json`, `flags_json`).
 
-**Nebius 404 — model does not exist** → The `-fast` suffix model variant was retired. Use `meta-llama/Meta-Llama-3.1-70B-Instruct` (without `-fast`).
+**Nebius 404 — model does not exist** → Nebius periodically retires models. As of June 2026, use `meta-llama/Llama-3.3-70B-Instruct`. To check the current list: `client.models.list()` via the OpenAI-compatible client pointed at `NEBIUS_BASE_URL`.
 
 **Twilio error 21659 — country mismatch** → Your Twilio from-number is registered in a different country than the recipient. On trial accounts: enable Geo Permissions in the Twilio console, or buy a number in the recipient's country.
 

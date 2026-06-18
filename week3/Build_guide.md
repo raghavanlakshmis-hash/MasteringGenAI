@@ -2702,6 +2702,21 @@ git push origin main
 
 **Second check-in day carries over previous day's values** → Widget keys must include the day number. If all keys use `f"q_{q['id']}"` with no day component, Streamlit reuses cached widget state from the prior submission. Fix: use `f"q_{recovery_day}_{q['id']}"` everywhere — typed form, voice gap-fill form, and the historical backfill form. Also set `value=None` on sliders and number inputs so they start blank instead of defaulting to 5 / 150.
 
+**Medication conflict warnings never appear in the UI (S8-1)** → In `care_plan_agent.py`, the `approval_item` dict was built inside the interaction loop but never appended to `state["human_approval_queue"]`. Fix: add `state["human_approval_queue"].append(approval_item)` immediately after the dict is constructed, still inside the `for detail` loop.
+
+**Claude API 401 "invalid x-api-key" on every agent call (S8-2)** → Two causes: (1) `client = Anthropic()` was at module level in every agent file, so it read `ANTHROPIC_API_KEY` at import time — before `load_dotenv()` ran in `streamlit_app.py`. (2) `load_dotenv()` without `override=True` silently loses to a stale system-level env var. Fix: move `client = Anthropic()` inside each agent function (lazy init), and change every `load_dotenv()` call to `load_dotenv(override=True)` — in `streamlit_app.py`, `care_plan_agent.py`, `intake_agent.py`, and `monitoring_agent.py`. If the error persists after the code fix, the key itself is revoked — generate a new one at console.anthropic.com and paste it into `.env`.
+
+**Historical check-in date picker crashes with min > max (S8-3)** → The `available` list is built oldest-first (Day 1 at index 0, yesterday at index -1). The `st.date_input` had `min_value=available_dates[-1]` (newest) and `max_value=available_dates[0]` (oldest) — exactly backwards. Fix: swap them so `min_value=available_dates[0]` and `max_value=available_dates[-1]`, and set `value=available_dates[-1]` so the picker defaults to the most recent unlogged day.
+
+**Voice recording crashes with FileNotFoundError on stop (S8-4)** → `pydub` (used internally by `streamlit-audiorecorder`) requires `ffmpeg` to decode audio. The `except ImportError` block in `streamlit_app.py` never caught this error. Fix: add `except FileNotFoundError` and `except Exception` handlers to degrade gracefully to the typed form. To enable voice recording, install ffmpeg: `winget install Gyan.FFmpeg`. Then add this block near the top of `streamlit_app.py` so pydub finds it even if the PATH hasn't refreshed yet:
+```python
+_FFMPEG_BIN = r"C:\Users\<you>\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_...\bin"
+if os.path.isdir(_FFMPEG_BIN):
+    os.environ["PATH"] = _FFMPEG_BIN + os.pathsep + os.environ.get("PATH", "")
+```
+
+**Voice transcript parsed but medications / energy not updated (S8-5)** → `parse_transcript_to_responses` sent Claude a minimal prompt with no type information. Claude had no idea `med_checkbox` questions expect `"Yes — I took it"` / `"No — I missed it"`, or that `scale_1_10` expects an integer (so `"four"` was never converted to `4`). On any JSON parse error the `except` block silently dumped the whole transcript into `concerns`. Fix: rewrite the prompt to include per-question type annotations and allowed values; add explicit rules for word-to-number conversion and medication name matching; catch `json.JSONDecodeError` separately so failures are logged rather than swallowed.
+
 ---
 
 ## Phase 6.5 — Historical Check-in Backfill (added post-build)

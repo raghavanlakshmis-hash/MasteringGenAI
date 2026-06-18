@@ -2697,3 +2697,36 @@ git push origin main
 **Dashboard shows "0/0 days (perfect)"** → The `daily_vitals_log` was never being written to. The fix is in `run_monitoring_agent`: after classifying the check-in, extract `meds_taken`/`meds_missed` from `check_in_responses` and append a `DailyVitals` record. See the monitoring agent code above.
 
 **Date picker shows only today** → The `min_value` is derived from the discharge date stored in state. If you onboarded with today as the discharge date, only today is selectable (correct behavior). Use one of the synthetic PDFs in `/data/` that has a discharge date from a week+ ago to get a wider date range for testing.
+
+**Swelling / shortness-of-breath question pre-selects "Yes"** → The `yes_no_detail` radio was missing `index=None`. Streamlit defaults to index 0 which is "Yes". Fix: add `index=None` to every `st.radio()` call for `yes_no_detail` questions in both the typed form and the voice gap-fill form.
+
+**Second check-in day carries over previous day's values** → Widget keys must include the day number. If all keys use `f"q_{q['id']}"` with no day component, Streamlit reuses cached widget state from the prior submission. Fix: use `f"q_{recovery_day}_{q['id']}"` everywhere — typed form, voice gap-fill form, and the historical backfill form. Also set `value=None` on sliders and number inputs so they start blank instead of defaulting to 5 / 150.
+
+---
+
+## Phase 6.5 — Historical Check-in Backfill (added post-build)
+
+A patient who sets up Nexus several days after discharge needs a way to log past days before
+seeing their care plan. This is handled by a dedicated page that runs between onboarding and
+the care plan.
+
+### How it works
+
+After `intake_graph` completes, the app routes to `"historical_checkin"` instead of `"care_plan"`.
+The page runs a three-phase loop controlled by `st.session_state.history_phase`:
+
+| Phase | What the patient sees |
+|---|---|
+| `ask` | Count of available past days + "Log a day / Skip" choice |
+| `form` | Date picker (discharge+1 → yesterday, already-logged days excluded) + full check-in form with blank defaults |
+| `ask_more` | GREEN/YELLOW/RED result for the day just saved + remaining count + "Another day / Go to care plan" |
+
+The loop repeats until the patient selects "No" or all past days are logged.
+
+### Key implementation details
+
+- `available` list is recomputed at each `ask_more` phase from `check_in_history` so already-logged days disappear from the picker.
+- All widget keys include `recovery_day` (e.g. `f"hist_{recovery_day}_{q['id']}"`) — same fix as the multi-day stale-key bug.
+- `value=None` on sliders and number inputs — no defaults carry over.
+- Future dates are never selectable — `max_value=yesterday` is enforced.
+- If no past days exist (discharged today), the page skips directly to the care plan.

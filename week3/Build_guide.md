@@ -2745,3 +2745,185 @@ The loop repeats until the patient selects "No" or all past days are logged.
 - `value=None` on sliders and number inputs — no defaults carry over.
 - Future dates are never selectable — `max_value=yesterday` is enforced.
 - If no past days exist (discharged today), the page skips directly to the care plan.
+
+---
+
+## Issue Set 9 — UI Polish, Performance & Bug Fixes (2026-06-18)
+
+Sixteen issues found and fixed across UI/CSS, intake performance, and check-in reliability.
+
+---
+
+### S9-1 — "keyboard_double" text appearing in sidebar header
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** The text `keyboard_double_` appears at the top of the sidebar where the collapse/expand icon button should be.
+
+**Root cause:** The CSS rule `[data-testid="stSidebar"] span { font-family: 'Mulish' !important }` was applied to every `<span>` in the sidebar, including the `<span>` inside the collapse button that renders a Material Symbols icon. Overriding the font breaks icon rendering — the glyph falls back to its raw name as text.
+
+**Fix:** Removed `span` from the broad sidebar font override. Added targeted restoration rules for button spans: `[data-testid="stSidebar"] button span, [data-testid="stSidebarCollapsedControl"] span { font-family: inherit !important }`.
+
+---
+
+### S9-2 — Progress bars still showing purple
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** Medication adherence progress bars on the Dashboard render in Streamlit's default blue-purple.
+
+**Root cause:** The CSS selector `[data-testid="stProgressBar"] > div` only targets the outer track element, not the inner fill `<div>` nested several levels deeper.
+
+**Fix:** Replaced with six selectors covering all DOM nesting depths Streamlit has used across versions: `[data-testid="stProgressBar"] div[role="progressbar"] > div`, `[data-testid="stProgressBar"] [role="progressbar"] > div`, `.stProgress [role="progressbar"] > div`, etc.
+
+---
+
+### S9-3 — Main content area left-aligned, not centred
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** With `layout="wide"`, the 1080px content block sits left-aligned instead of centred.
+
+**Root cause:** `.block-container` had `max-width: 1080px` but no `margin: auto`.
+
+**Fix:** Added `margin-left: auto !important; margin-right: auto !important` to `.block-container`.
+
+---
+
+### S9-4 — Sidebar branding too small for the panel
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** "🌿 Nexus" title and "Recovery Co-Pilot" subtitle are undersized relative to the sidebar width.
+
+**Fix:** Increased the title from `font-size: 2.2rem → 3.2rem` and subtitle from `0.88rem → 1.1rem`. Padding increased from `0.5rem top → 1.5rem`.
+
+---
+
+### S9-5 — Main panel page header not prominent enough
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** The `.nexus-page-header` card looks like an ordinary card rather than a clear app header.
+
+**Fix:** Redesigned the header — warm cream gradient background instead of flat white, padding increased (`1.35rem → 1.75rem`), Nexus title bumped to `2rem` Playfair Display, subtitle to `1rem` weight 500, badge enlarged with gradient fill and shadow, left accent bar widened to 6px. Added `flex-shrink: 0` on the badge so it never wraps.
+
+---
+
+### S9-6 — Consent checkbox still renders purple
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** The "I consent" checkbox on the onboarding page shows Streamlit's default indigo fill.
+
+**Root cause:** The existing selector `[data-baseweb="checkbox"] [aria-checked="true"] > div` doesn't match. Streamlit's outer wrapper is `[data-testid="stCheckbox"]`, not `[data-baseweb="checkbox"]`, and `aria-checked` is on the `role="checkbox"` span, not on a parent.
+
+**Fix:** Added `[data-testid="stCheckbox"]`-prefixed selectors for both checked and unchecked states, plus `input[type="checkbox"] { accent-color: var(--c-sage-dk) }` as a native fallback. Added explicit `width/height: 18px` on the hidden input so accent-color applies.
+
+---
+
+### S9-7 — Multiselect tags, select dropdowns still blue
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** Multiselect pill tags appear blue; selected items in select dropdowns highlight blue.
+
+**Root cause:** No CSS rules existed for `[data-baseweb="tag"]` or `[data-baseweb="menu"]`.
+
+**Fix:** Added `.sage-lt` background + sage text colour for `[data-baseweb="tag"]`, and `[data-baseweb="menu"] li[aria-selected="true"], li:hover` for dropdown highlights.
+
+---
+
+### S9-8 — File uploader dropzone shows lavender background
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** The PDF upload area on the onboarding page has Streamlit's default lavender/purple tint.
+
+**Root cause:** No CSS for `[data-testid="stFileUploaderDropzone"]`.
+
+**Fix:** Added cream `var(--c-surface)` background and taupe border; hover shifts to `var(--c-sage-lt)`.
+
+---
+
+### S9-9 — Text input fields show blue-lavender background
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** All `st.text_input` fields (name, email, contact, etc.) show Streamlit's default `rgb(240, 242, 246)` background.
+
+**Root cause:** Streamlit sets `background-color` as an inline style directly on the `<input>` element, which overrides our wrapper-div rule.
+
+**Fix:** Added `input:not([type="checkbox"]):not([type="radio"]) { background-color: #FDFBF5 !important }` to target the actual `<input>` element. Also broadened wrapper selectors to include `[data-testid="stTextInput"] > div` and `[data-testid="stDateInput"] > div > div`.
+
+---
+
+### S9-10 — Calendar popup shows lavender background and purple selected-day circle
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** When the date picker opens, the popup has a purple/lavender background and the selected day has a purple filled circle.
+
+**Root cause (background):** No CSS for the `[data-baseweb="calendar"]` popup container or its inner grid.
+
+**Root cause (selected day):** Selector was `[aria-selected="true"] button` (a `button` *inside* an `aria-selected` element) but in BaseUI the `aria-selected` attribute is on the `<button>` itself.
+
+**Fix:** Added cream background overrides for `[data-baseweb="calendar"]`, its child `> div`, `[role="grid"]` and nested divs. Fixed selected-day rule to `button[aria-selected="true"]`. Added sage outline ring for today, sage-lt hover for unselected days.
+
+---
+
+### S9-11 — "Press Enter to submit form" tooltip appears while typing
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** A tooltip reading "Press Enter to submit form" appears inside every text input while the user is typing, causing confusion since explicit submit buttons exist on all forms.
+
+**Root cause:** Streamlit injects `[data-testid="InputInstructions"]` inside form text inputs by default.
+
+**Fix:** Added `[data-testid="InputInstructions"] { display: none !important }`.
+
+---
+
+### S9-12 — Intake + care plan takes 30-60 seconds
+
+**File(s):** `tools/openfda.py`, `agents/care_plan_agent.py`
+
+**Symptom:** The "Reading your discharge summary…" spinner blocks for 30-60 seconds on a typical 5-6 medication discharge.
+
+**Root cause — OpenFDA serial calls:** `check_medication_interactions` made one sequential HTTP request per medication (timeout=10s each). Six medications = up to 60 seconds before Claude was even called.
+
+**Root cause — Nebius blocking:** `run_care_plan_via_nebius` was called synchronously in the care plan agent despite a comment saying "in parallel". A Llama-3.3-70B inference on Nebius added another 10-30 seconds, and its result is never used in the UI.
+
+**Root cause — Care plan token budget:** `max_tokens=6000` on the care plan Claude call is unnecessarily large, adding latency.
+
+**Fix (OpenFDA):** Rewrote `check_medication_interactions` to use `concurrent.futures.ThreadPoolExecutor` — all medication checks run in parallel, bounded by the slowest single response (~8s) instead of summing all timeouts.
+
+**Fix (Nebius):** Moved `run_care_plan_via_nebius` into a `threading.Thread(daemon=True)` — fires in background, never blocks the user.
+
+**Fix (tokens):** Reduced care plan `max_tokens` from 6000 → 3500. A structured JSON care plan does not need more than 3500 tokens.
+
+**Expected improvement:** ~10-15 seconds total (two sequential Claude calls + Pinecone store), down from 30-60 seconds.
+
+---
+
+### S9-13 — "Unable to classify check-in. Flagging for review." on every check-in
+
+**File(s):** `agents/monitoring_agent.py`
+
+**Symptom:** After submitting a daily check-in, the result always shows "⚠️ We noticed some things today: Unable to classify check-in. Flagging for review." regardless of what was entered.
+
+**Root cause:** `max_tokens=500` on the monitoring Claude call. The required JSON response (classification, flags array, summary, recommended_action, escalation_reason) regularly exceeds 500 tokens when there are multiple flags or a detailed summary, causing the response to be cut off mid-JSON. `json.loads` then throws `JSONDecodeError`, which the `except Exception` block catches and replaces with the fallback YELLOW result.
+
+**Fix:** Raised `max_tokens` from 500 → 1000. Added `print(f"[Monitoring Agent] Classification error: {type(e).__name__}: {e}")` to the fallback handler so the actual exception is visible in the terminal if the issue recurs.
+
+---
+
+### S9-14 — Voice transcript re-runs on every page interaction
+
+**File(s):** `ui/streamlit_app.py`
+
+**Symptom:** After recording a voice check-in, every subsequent click (filling a gap question, clicking submit) re-triggers the transcription spinner and the "Understanding your responses…" spinner, causing them to appear mid-page out of order. The gap-fill form is reset before the user can submit it.
+
+**Root cause:** Streamlit re-runs the entire script on every interaction. `len(audio) > 0` remains true after recording, so `transcribe_audio()` (ElevenLabs API call) and `parse_transcript_to_responses()` (Claude API call) were called on every rerun.
+
+**Fix:** Hash the audio bytes on each render (`hash(audio_bytes)`). Store the hash, STT result, and parsed responses in `st.session_state` under `_voice_audio_hash`, `_voice_stt_result`, `_voice_parsed_responses`. Subsequent reruns with the same audio read from cache — no API calls. A new recording (different hash) clears the cache. Cache is also cleared on submit so a fresh check-in always starts clean.

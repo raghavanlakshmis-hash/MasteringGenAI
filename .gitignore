@@ -6,3 +6,6 @@ __pycache__/
 *.tmp
 ~$*
 **/API Keys.docx
+week3/*.md
+week3/*.docx
+week3/archive/
